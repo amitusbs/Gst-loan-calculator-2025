@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST and Loan EMI Calculator</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            background-color: #0073aa;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+        }
+
+        .tab-button.active {
+            background-color: #005177;
+        }
+
+        .tab-content {
+            padding: 20px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #0073aa;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #005177;
+        }
+
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9e9e9;
+            border-radius: 4px;
+        }
+
+        .results h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <!-- Tab Buttons -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="gst-calculator">GST Calculator</button>
+            <button class="tab-button" data-tab="loan-calculator">Loan Calculator</button>
+        </div>
+
+        <!-- GST Calculator -->
+        <div id="gst-calculator" class="tab-content active">
+            <h2>GST Calculator India</h2>
+            <form id="gst-form">
+                <div class="input-group">
+                    <label for="original_price">Original Price (₹):</label>
+                    <input type="number" id="original_price" name="original_price" required>
+                </div>
+                <div class="input-group">
+                    <label for="gst_rate">GST Rate (%):</label>
+                    <select id="gst_rate" name="gst_rate" required>
+                        <option value="5">5%</option>
+                        <option value="12">12%</option>
+                        <option value="18">18%</option>
+                        <option value="28">28%</option>
+                    </select>
+                </div>
+                <button type="submit" id="gst-calculate">Calculate GST</button>
+            </form>
+            <div class="results" id="gst-results">
+                <h3>Results:</h3>
+                <p>GST Amount: ₹<span id="gst_amount">0</span></p>
+                <p>Total Price After GST: ₹<span id="total_price">0</span></p>
+                <p>CGST (50% of GST): ₹<span id="cgst">0</span></p>
+                <p>SGST (50% of GST): ₹<span id="sgst">0</span></p>
+            </div>
+        </div>
+
+        <!-- Loan EMI Calculator -->
+        <div id="loan-calculator" class="tab-content">
+            <h2>Loan EMI Calculator</h2>
+            <form id="loan-form">
+                <div class="input-group">
+                    <label for="loan_amount">Loan Amount (₹):</label>
+                    <input type="number" id="loan_amount" name="loan_amount" required>
+                </div>
+                <div class="input-group">
+                    <label for="interest_rate">Interest Rate (%):</label>
+                    <input type="number" step="0.01" id="interest_rate" name="interest_rate" required>
+                </div>
+                <div class="input-group">
+                    <label for="loan_tenure">Loan Tenure:</label>
+                    <input type="number" id="loan_tenure" name="loan_tenure" required>
+                    <select id="tenure_type" name="tenure_type">
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                    </select>
+                </div>
+                <button type="submit" id="loan-calculate">Calculate EMI</button>
+            </form>
+            <div class="results" id="loan-results">
+                <h3>Results:</h3>
+                <p>Monthly EMI: ₹<span id="monthly_emi">0</span></p>
+                <p>Total Interest Payable: ₹<span id="total_interest">0</span></p>
+                <p>Total Amount Payable: ₹<span id="total_amount">0</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Switching Logic
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons and contents
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                // Add active class to the clicked button and corresponding content
+                const tabId = button.getAttribute('data-tab');
+                button.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // GST Calculator Logic
+        document.getElementById('gst-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Get form data
+            const originalPrice = parseFloat(document.getElementById('original_price').value);
+            const gstRate = parseFloat(document.getElementById('gst_rate').value);
+
+            // Calculate GST
+            const gstAmount = (originalPrice * gstRate) / 100;
+            const totalPrice = originalPrice + gstAmount;
+            const cgst = gstAmount / 2;
+            const sgst = gstAmount / 2;
+
+            // Display results
+            document.getElementById('gst_amount').textContent = gstAmount.toFixed(2);
+            document.getElementById('total_price').textContent = totalPrice.toFixed(2);
+            document.getElementById('cgst').textContent = cgst.toFixed(2);
+            document.getElementById('sgst').textContent = sgst.toFixed(2);
+        });
+
+        // Loan EMI Calculator Logic
+        document.getElementById('loan-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Get form data
+            const loanAmount = parseFloat(document.getElementById('loan_amount').value);
+            const interestRate = parseFloat(document.getElementById('interest_rate').value);
+            const loanTenure = parseFloat(document.getElementById('loan_tenure').value);
+            const tenureType = document.getElementById('tenure_type').value;
+
+            // Convert tenure to months if in years
+            const tenureInMonths = tenureType === 'years' ? loanTenure * 12 : loanTenure;
+
+            // Calculate EMI
+            const monthlyInterestRate = (interestRate / 12) / 100;
+            const emi = (loanAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, tenureInMonths)) /
+                (Math.pow(1 + monthlyInterestRate, tenureInMonths) - 1);
+            const totalAmount = emi * tenureInMonths;
+            const totalInterest = totalAmount - loanAmount;
+
+            // Display results
+            document.getElementById('monthly_emi').textContent = emi.toFixed(2);
+            document.getElementById('total_interest').textContent = totalInterest.toFixed(2);
+            document.getElementById('total_amount').textContent = totalAmount.toFixed(2);
+        });
+    </script>
+</body>
+</html>
